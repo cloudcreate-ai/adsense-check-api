@@ -1,0 +1,12 @@
+name = "adsense-check-api"
+main = "src/index.ts"
+compatibility_date = "2025-01-21"
+
+[vars]
+AI_API_BASE = "https://api.deepseek.com"
+AI_FAST_MODEL = "deepseek-chat"
+AI_EXPERT_MODEL = "claude-sonnet-4-6"
+RATE_LIMIT_MAX = "60"
+
+[placement]
+mode = "smart"
