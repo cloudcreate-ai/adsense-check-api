@@ -1,8 +1,8 @@
 import { extractJson } from './prompts';
 
 interface Env {
-  AI_API_BASE?: string;
-  AI_API_KEY?: string;
+  AI_FAST_API_BASE?: string;
+  AI_FAST_API_KEY?: string;
   AI_FAST_MODEL?: string;
   AI_EXPERT_API_BASE?: string;
   AI_EXPERT_API_KEY?: string;
@@ -19,16 +19,16 @@ export interface ModelConfig {
 function getDefaultFastModel(env: Env): { model: string; apiBase: string; apiKey: string } {
   return {
     model: env.AI_FAST_MODEL || 'deepseek-chat',
-    apiBase: env.AI_API_BASE || 'https://api.deepseek.com',
-    apiKey: env.AI_API_KEY || '',
+    apiBase: env.AI_FAST_API_BASE || 'https://api.deepseek.com',
+    apiKey: env.AI_FAST_API_KEY || '',
   };
 }
 
 function getDefaultExpertModel(env: Env): { model: string; apiBase: string; apiKey: string } {
   return {
-    model: env.AI_EXPERT_MODEL || 'claude-sonnet-4-6',
-    apiBase: env.AI_EXPERT_API_BASE || env.AI_API_BASE || 'https://api.deepseek.com',
-    apiKey: env.AI_EXPERT_API_KEY || env.AI_API_KEY || '',
+    model: env.AI_EXPERT_MODEL || 'deepseek-v4-pro',
+    apiBase: env.AI_EXPERT_API_BASE || 'https://api.deepseek.com',
+    apiKey: env.AI_EXPERT_API_KEY || '',
   };
 }
 
@@ -42,7 +42,7 @@ export function resolveModelConfig(
     model: override?.model || defaults.model,
     apiBase: override?.modelApiBase || defaults.apiBase,
     apiKey: override?.modelApiKey || defaults.apiKey,
-    maxTokens: expert ? 2048 : 2048,
+    maxTokens: 2048,
   };
 }
 

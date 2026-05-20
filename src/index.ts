@@ -10,67 +10,77 @@ import type {
   ApprovalAnalysisRequest,
 } from './types';
 
+const DOCS_HINT = 'See GET /llms.txt for API documentation';
+const FREE_API_KEY = 'adsense-check-api-key-free';
+
 type Env = {
   API_KEY?: string;
-  AI_API_BASE?: string;
-  AI_API_KEY?: string;
+  AI_FAST_API_BASE?: string;
+  AI_FAST_API_KEY?: string;
   AI_FAST_MODEL?: string;
   AI_EXPERT_API_BASE?: string;
   AI_EXPERT_API_KEY?: string;
   AI_EXPERT_MODEL?: string;
   RATE_LIMIT_MAX?: string;
-  ALLOWED_ORIGINS?: string;
 };
 
-const app = new Hono<{ Bindings: Env }>();
+const app = new Hono<{ Bindings: Env; Variables: { isFreeUser: boolean } }>();
 
-// ── Middleware ─────────────────────────────────────────────────────────────
-
-// CORS
+// CORS (applied to all routes including /llms.txt)
 app.use('*', cors({
   origin: (origin) => origin || '*',
   allowHeaders: ['Content-Type', 'Authorization'],
   maxAge: 86400,
 }));
 
-// Auth
-app.use('/analyze/*', async (c, next) => {
+// ── API routes (auth + rate limit) ────────────────────────────────────────
+
+const api = new Hono<{ Bindings: Env; Variables: { isFreeUser: boolean } }>();
+
+api.use('*', async (c, next) => {
   const auth = c.req.header('Authorization');
   if (!auth || !auth.startsWith('Bearer ')) {
-    return c.json({ error: 'Missing Authorization header', code: 'UNAUTHORIZED' }, 401);
+    return c.json({ error: 'Missing Authorization header. Use Bearer adsense-check-api-key-free for free access.', code: 'UNAUTHORIZED', docs: DOCS_HINT }, 401);
   }
   const token = auth.slice(7);
-  const expected = c.env.API_KEY;
-  if (!expected || token !== expected) {
-    return c.json({ error: 'Invalid API key', code: 'FORBIDDEN' }, 403);
+  const expected = c.env.API_KEY || FREE_API_KEY;
+  if (token !== expected) {
+    return c.json({ error: 'Invalid API key', code: 'FORBIDDEN', docs: DOCS_HINT }, 403);
+  }
+  if (token === FREE_API_KEY) {
+    c.set('isFreeUser', true);
   }
   await next();
 });
 
-// Rate limiter
-app.use('/analyze/*', async (c, next) => {
+api.use('*', async (c, next) => {
   const max = parseInt(c.env.RATE_LIMIT_MAX || '60', 10);
-  const apiKey = c.env.API_KEY || '';
+  const apiKey = c.env.API_KEY || FREE_API_KEY;
   if (!checkRateLimit(apiKey, max)) {
-    return c.json({ error: 'Rate limit exceeded', code: 'RATE_LIMITED' }, 429);
+    return c.json({ error: 'Rate limit exceeded', code: 'RATE_LIMITED', docs: DOCS_HINT }, 429);
   }
   await next();
 });
 
-// ── Routes ─────────────────────────────────────────────────────────────────
+api.use('*', async (c, next) => {
+  await next();
+  if ((c.get('isFreeUser') as boolean | undefined)) {
+    c.res.headers.set('X-Powered-By', 'adsense-check - https://github.com/cloudcreate-ai/adsense-checklist');
+  }
+});
 
-app.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
+api.get('/health', (c) => c.json({ status: 'ok', timestamp: new Date().toISOString() }));
 
-app.post('/analyze/page', async (c) => {
+api.post('/analyze/page', async (c) => {
   let body: AnalyzePageRequest;
   try {
     body = await c.req.json();
   } catch {
-    return c.json({ error: 'Invalid JSON body', code: 'BAD_REQUEST' }, 400);
+    return c.json({ error: 'Invalid JSON body', code: 'BAD_REQUEST', docs: DOCS_HINT }, 400);
   }
 
   if (!body.content || !body.url) {
-    return c.json({ error: 'Missing required fields: content, url', code: 'BAD_REQUEST' }, 400);
+    return c.json({ error: 'Missing required fields: content, url', code: 'BAD_REQUEST', docs: DOCS_HINT }, 400);
   }
 
   const langName = getLangName(body.lang || 'en');
@@ -97,20 +107,20 @@ app.post('/analyze/page', async (c) => {
     const result = await callAiAPI(prompt, resolveModelConfig(c.env, false, body));
     return c.json(result);
   } catch (err) {
-    return c.json({ error: String(err), code: 'AI_ERROR' }, 502);
+    return c.json({ error: String(err), code: 'AI_ERROR', docs: DOCS_HINT }, 502);
   }
 });
 
-app.post('/analyze/compliance', async (c) => {
+api.post('/analyze/compliance', async (c) => {
   let body: ComplianceRecheckRequest;
   try {
     body = await c.req.json();
   } catch {
-    return c.json({ error: 'Invalid JSON body', code: 'BAD_REQUEST' }, 400);
+    return c.json({ error: 'Invalid JSON body', code: 'BAD_REQUEST', docs: DOCS_HINT }, 400);
   }
 
   if (!body.content || !body.url || body.firstScore == null) {
-    return c.json({ error: 'Missing required fields: content, url, firstScore', code: 'BAD_REQUEST' }, 400);
+    return c.json({ error: 'Missing required fields: content, url, firstScore', code: 'BAD_REQUEST', docs: DOCS_HINT }, 400);
   }
 
   const langName = getLangName(body.lang || 'en');
@@ -125,20 +135,20 @@ app.post('/analyze/compliance', async (c) => {
     const result = await callAiAPI(prompt, resolveModelConfig(c.env, false, body));
     return c.json(result);
   } catch (err) {
-    return c.json({ error: String(err), code: 'AI_ERROR' }, 502);
+    return c.json({ error: String(err), code: 'AI_ERROR', docs: DOCS_HINT }, 502);
   }
 });
 
-app.post('/analyze/topic', async (c) => {
+api.post('/analyze/topic', async (c) => {
   let body: TopicAnalysisRequest;
   try {
     body = await c.req.json();
   } catch {
-    return c.json({ error: 'Invalid JSON body', code: 'BAD_REQUEST' }, 400);
+    return c.json({ error: 'Invalid JSON body', code: 'BAD_REQUEST', docs: DOCS_HINT }, 400);
   }
 
   if (!body.title || !body.content) {
-    return c.json({ error: 'Missing required fields: title, content', code: 'BAD_REQUEST' }, 400);
+    return c.json({ error: 'Missing required fields: title, content', code: 'BAD_REQUEST', docs: DOCS_HINT }, 400);
   }
 
   const langName = getLangName(body.lang || 'en');
@@ -154,20 +164,20 @@ app.post('/analyze/topic', async (c) => {
     const result = await callAiAPI(prompt, resolveModelConfig(c.env, false, body));
     return c.json(result);
   } catch (err) {
-    return c.json({ error: String(err), code: 'AI_ERROR' }, 502);
+    return c.json({ error: String(err), code: 'AI_ERROR', docs: DOCS_HINT }, 502);
   }
 });
 
-app.post('/analyze/approval', async (c) => {
+api.post('/analyze/approval', async (c) => {
   let body: ApprovalAnalysisRequest;
   try {
     body = await c.req.json();
   } catch {
-    return c.json({ error: 'Invalid JSON body', code: 'BAD_REQUEST' }, 400);
+    return c.json({ error: 'Invalid JSON body', code: 'BAD_REQUEST', docs: DOCS_HINT }, 400);
   }
 
   if (!body.siteUrl || !body.pageSummaries) {
-    return c.json({ error: 'Missing required fields: siteUrl, pageSummaries', code: 'BAD_REQUEST' }, 400);
+    return c.json({ error: 'Missing required fields: siteUrl, pageSummaries', code: 'BAD_REQUEST', docs: DOCS_HINT }, 400);
   }
 
   const expert = body.expert || false;
@@ -194,8 +204,20 @@ app.post('/analyze/approval', async (c) => {
     const result = await callAiAPI(prompt, resolveModelConfig(c.env, expert, body));
     return c.json(result);
   } catch (err) {
-    return c.json({ error: String(err), code: 'AI_ERROR' }, 502);
+    return c.json({ error: String(err), code: 'AI_ERROR', docs: DOCS_HINT }, 502);
   }
+});
+
+app.route('/api', api);
+
+// Export api sub-app for integration testing (avoids Hono sub-app env binding propagation issue)
+export { api };
+
+app.notFound((c) => {
+  const method = c.req.method;
+  const path = c.req.path;
+  const message = `Not found: ${method} ${path}. Available API routes are under /api/ (e.g. /api/health, /api/analyze/page). See GET /llms.txt for full API documentation.`;
+  return new Response(message, { status: 404, headers: { 'Content-Type': 'text/plain' } });
 });
 
 export default app;

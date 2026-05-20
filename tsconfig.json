@@ -3,7 +3,7 @@
     "target": "ES2022",
     "module": "ESNext",
     "lib": ["ES2022"],
-    "types": ["@cloudflare/workers-types"],
+    "types": ["@cloudflare/workers-types", "vitest/globals"],
     "moduleResolution": "bundler",
     "strict": true,
     "skipLibCheck": true,
@@ -11,7 +11,8 @@
     "esModuleInterop": true,
     "isolatedModules": true,
     "forceConsistentCasingInFileNames": true,
-    "rootDir": "./src"
+    "rootDir": ".",
+    "noUnusedLocals": false
   },
-  "include": ["src"]
+  "include": ["src", "test"]
 }

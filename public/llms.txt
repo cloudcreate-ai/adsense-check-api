@@ -1,0 +1,90 @@
+# adsense-check-api
+
+Cloudflare Worker API for Google AdSense page analysis.
+
+## Authentication
+
+All endpoints require Bearer token in Authorization header.
+
+Free key: `adsense-check-api-key-free`
+
+## Endpoints
+
+### POST /api/analyze/page
+5-dimension page scoring (value, originality, relevance, compliance, translation)
+Required fields: url, content
+Optional fields: lang, pageLanguage, embedSignal, siteTopic, listingSignals, model, modelApiBase, modelApiKey
+
+Example:
+```json
+{
+  "url": "https://example.com/article",
+  "content": "Full page text...",
+  "lang": "en",
+  "pageLanguage": "English",
+  "embedSignal": "none"
+}
+```
+
+### POST /api/analyze/compliance
+Second-pass compliance re-check for flagged pages.
+Required fields: url, content, firstScore
+Optional fields: lang, model, modelApiBase, modelApiKey
+
+Example:
+```json
+{
+  "url": "https://example.com/page",
+  "content": "Flagged page text...",
+  "firstScore": 4
+}
+```
+
+### POST /api/analyze/topic
+Site topic & type detection.
+Required fields: title, content
+Optional fields: metaDescription, navText, lang, model, modelApiBase, modelApiKey
+
+Example:
+```json
+{
+  "title": "My Site",
+  "metaDescription": "A site about...",
+  "navText": "Home | About | Contact",
+  "content": "Homepage text..."
+}
+```
+
+### POST /api/analyze/approval
+AdSense approval probability assessment.
+Required fields: siteUrl, pageSummaries
+Optional fields: siteType, siteTopic, pagesAnalyzed, totalDiscovered, compositeScore, pageValueScore, siteQuality, homeQuality, pageValueNote, lang, expert, model, modelApiBase, modelApiKey
+
+Example:
+```json
+{
+  "siteUrl": "https://example.com",
+  "siteType": "content",
+  "siteTopic": "Excel tools",
+  "pagesAnalyzed": 10,
+  "totalDiscovered": 50,
+  "compositeScore": 65,
+  "pageValueScore": 70,
+  "siteQuality": 80,
+  "homeQuality": 75,
+  "pageSummaries": "- https://example.com/1: [pass] V=8 O=7 R=9 C=8\n- ..."
+}
+```
+
+## Error Codes
+
+- UNAUTHORIZED: Missing or invalid Authorization header
+- FORBIDDEN: Invalid API key
+- RATE_LIMITED: Too many requests
+- BAD_REQUEST: Missing or invalid request fields
+- AI_ERROR: Upstream AI API call failed
+- NOT_FOUND: Path not found
+
+## Project
+
+https://github.com/cloudcreate-ai/adsense-checklist

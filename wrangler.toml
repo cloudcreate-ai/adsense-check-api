@@ -2,10 +2,15 @@ name = "adsense-check-api"
 main = "src/index.ts"
 compatibility_date = "2025-01-21"
 
+[assets]
+directory = "./public"
+
 [vars]
-AI_API_BASE = "https://api.deepseek.com"
-AI_FAST_MODEL = "deepseek-chat"
-AI_EXPERT_MODEL = "claude-sonnet-4-6"
+API_KEY = "adsense-check-api-key-free"
+AI_FAST_API_BASE = "https://api.deepseek.com"
+AI_FAST_MODEL = "deepseek-v4-flash"
+AI_EXPERT_API_BASE = "https://api.deepseek.com"
+AI_EXPERT_MODEL = "deepseek-v4-pro"
 RATE_LIMIT_MAX = "60"
 
 [placement]
