@@ -8,6 +8,12 @@ All endpoints require Bearer token in Authorization header.
 
 Free key: `adsense-check-api-key-free`
 
+> By using the free tier, you consent to your data being used for product optimization.
+
+## Client Version
+
+All POST requests should include `clientVersion` in the JSON body (e.g. `"clientVersion": "1.11.2"`). When the server has `MIN_CLIENT_VERSION` configured and the client version is below it, the API returns `426 Upgrade Required` with code `CLIENT_VERSION_TOO_OLD`.
+
 ## Endpoints
 
 ### POST /api/analyze/page
@@ -81,6 +87,7 @@ Example:
 - UNAUTHORIZED: Missing or invalid Authorization header
 - FORBIDDEN: Invalid API key
 - RATE_LIMITED: Too many requests
+- CLIENT_VERSION_TOO_OLD: Client version below minimum (426)
 - BAD_REQUEST: Missing or invalid request fields
 - AI_ERROR: Upstream AI API call failed
 - NOT_FOUND: Path not found

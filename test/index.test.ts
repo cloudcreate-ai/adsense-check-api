@@ -483,6 +483,21 @@ describe('X-Powered-By header', () => {
   });
 });
 
+describe('X-Data-Usage header', () => {
+  test('free user responses include data usage consent header', async () => {
+    mockAiResponse({ pageType: 'content' });
+    const res = await apiReq('/analyze/page', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ url: 'https://example.com', content: 'test' }),
+    });
+    expect(res.headers.get('x-data-usage')).toBe('By using the free tier, you consent to your data being used for product optimization.');
+  });
+});
+
 // ── Rate limiting ────────────────────────────────────────────────────────
 
 describe('Rate limiting', () => {
@@ -499,5 +514,85 @@ describe('Rate limiting', () => {
     });
 
     expect(res.status).toBe(200);
+  });
+});
+
+// ── Client version check ─────────────────────────────────────────────────
+
+describe('Client version check', () => {
+  const envWithMinVersion = {
+    ...env,
+    MIN_CLIENT_VERSION: '1.12.0',
+  };
+
+  test('no MIN_CLIENT_VERSION set → request passes through', async () => {
+    mockAiResponse({ pageType: 'content' });
+    const res = await apiReq('/analyze/page', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ url: 'https://example.com', content: 'test' }),
+    });
+    expect(res.status).toBe(200);
+  });
+
+  test('version below minimum returns 426', async () => {
+    const res = await api.fetch(new Request('http://test/analyze/page', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ url: 'https://example.com', content: 'test', clientVersion: '1.10.0' }),
+    }), envWithMinVersion, undefined);
+    expect(res.status).toBe(426);
+    const body = await jsonBody(res);
+    expect(body.code).toBe('CLIENT_VERSION_TOO_OLD');
+    expect(body.minVersion).toBe('1.12.0');
+    expect(body.clientVersion).toBe('1.10.0');
+  });
+
+  test('version equal to minimum passes', async () => {
+    mockAiResponse({ pageType: 'content' });
+    const res = await api.fetch(new Request('http://test/analyze/page', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ url: 'https://example.com', content: 'test', clientVersion: '1.12.0' }),
+    }), envWithMinVersion, undefined);
+    expect(res.status).toBe(200);
+  });
+
+  test('version above minimum passes', async () => {
+    mockAiResponse({ pageType: 'content' });
+    const res = await api.fetch(new Request('http://test/analyze/page', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ url: 'https://example.com', content: 'test', clientVersion: '2.0.0' }),
+    }), envWithMinVersion, undefined);
+    expect(res.status).toBe(200);
+  });
+
+  test('missing clientVersion when MIN_CLIENT_VERSION is set → returns 426', async () => {
+    const res = await api.fetch(new Request('http://test/analyze/page', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${API_KEY}`,
+      },
+      body: JSON.stringify({ url: 'https://example.com', content: 'test' }),
+    }), envWithMinVersion, undefined);
+    expect(res.status).toBe(426);
+    const body = await jsonBody(res);
+    expect(body.code).toBe('CLIENT_VERSION_TOO_OLD');
+    expect(body.minVersion).toBe('1.12.0');
+    expect(body.clientVersion).toBe('(not provided)');
   });
 });

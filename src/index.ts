@@ -22,7 +22,19 @@ type Env = {
   AI_EXPERT_API_KEY?: string;
   AI_EXPERT_MODEL?: string;
   RATE_LIMIT_MAX?: string;
+  MIN_CLIENT_VERSION?: string;
 };
+
+/** Compare semver: returns -1/0/1 */
+function compareSemver(a: string, b: string): number {
+  const pa = a.split('.').map(Number);
+  const pb = b.split('.').map(Number);
+  for (let i = 0; i < 3; i++) {
+    const d = (pa[i] || 0) - (pb[i] || 0);
+    if (d !== 0) return Math.sign(d);
+  }
+  return 0;
+}
 
 const app = new Hono<{ Bindings: Env; Variables: { isFreeUser: boolean } }>();
 
@@ -53,6 +65,29 @@ api.use('*', async (c, next) => {
   await next();
 });
 
+// ── Client version check (after auth, before rate limit + routes) ───────────
+
+api.use('*', async (c, next) => {
+  const minVer = c.env.MIN_CLIENT_VERSION;
+  if (!minVer) { await next(); return; }
+  try {
+    const body = await c.req.json() as { clientVersion?: string };
+    const cv = body?.clientVersion;
+    if (!cv || compareSemver(cv, minVer) < 0) {
+      return c.json({
+        error: cv
+          ? `Client version ${cv} is below minimum ${minVer}. Please upgrade.`
+          : `Client version not provided. Minimum required: ${minVer}. Please upgrade.`,
+        code: 'CLIENT_VERSION_TOO_OLD',
+        minVersion: minVer,
+        clientVersion: cv ?? '(not provided)',
+        docs: DOCS_HINT,
+      }, 426); // 426 Upgrade
+    }
+  } catch { /* parse error, let downstream handler deal with it */ }
+  await next();
+});
+
 api.use('*', async (c, next) => {
   const max = parseInt(c.env.RATE_LIMIT_MAX || '60', 10);
   const apiKey = c.env.API_KEY || FREE_API_KEY;
@@ -66,6 +101,7 @@ api.use('*', async (c, next) => {
   await next();
   if ((c.get('isFreeUser') as boolean | undefined)) {
     c.res.headers.set('X-Powered-By', 'adsense-check - https://github.com/cloudcreate-ai/adsense-checklist');
+    c.res.headers.set('X-Data-Usage', 'By using the free tier, you consent to your data being used for product optimization.');
   }
 });
 
