@@ -13,7 +13,7 @@ Free key: `adsense-check-api-key-free`
 ### POST /api/analyze/page
 5-dimension page scoring (value, originality, relevance, compliance, translation)
 Required fields: url, content
-Optional fields: lang, pageLanguage, embedSignal, siteTopic, listingSignals, model, modelApiBase, modelApiKey
+Optional fields: lang, pageLanguage, embedSignal (game|tool|video|none), siteTopic, listingSignals, model, modelApiBase, modelApiKey
 
 Example:
 ```json

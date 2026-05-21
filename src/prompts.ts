@@ -24,15 +24,23 @@ Reply language: {{langName}}
 {{topicContext}}
 
 ## Step 1 — Classify the page type
-Choose ONE type based on the page's content and purpose:
+
+Choose ONE type based on the page's actual content, site topic, and purpose. The embedSignal below is a structural hint — classify based on what the page actually does, not what HTML elements it contains.
+
 - "homepage": The site's main landing page
 - "listing": An index/category page listing multiple items
 - "content": A standalone article, blog post, guide, or tutorial
-- "game_detail": A game page with a playable game or game download
+- "game_detail": A page where the core experience is a playable game (quizzes, puzzles, arcade, etc.)
+- "tool_detail": An interactive creative tool, editor, converter, calculator, or design canvas (e.g. image editor, pattern maker, code formatter, drawing canvas)
 - "video_detail": A page centered around a video or video embed
 - "reference_detail": A wiki entry, glossary term, encyclopedia article, or database record
 - "required": About, Privacy, Terms, Contact, Legal, Editorial Policy
-- "utility": Search, Login, Signup, Download, 404, or functional tool pages
+- "utility": Search, Login, Signup, Download, 404, or similar functional pages
+
+**Classification signals (combine, don't rely on any single one):**
+- If embedSignal = "game": There is a game-like iframe or canvas element. Check the page text for game mechanics (score, level, lives, play, start, game over, high score, play online, free game) vs tool features (draw, fill, export, undo, redo, save, upload, toolbar, grid, pixelate). The site topic context above also helps disambiguate.
+- A \`<canvas>\` or interactive widget is typically a creative tool if the site topic is design/craft/art/coding related. It is likely a game if the site topic is gaming and the page text contains game-specific language.
+- When the embedSignal and the site topic conflict (e.g., embedSignal=game but site topic is "Bead Studio" and page text mentions drawing/exporting), prefer tool_detail over game_detail.
 
 ## Step 2 — Score based on page type
 
@@ -42,7 +50,7 @@ Set value=10, originality=10, relevance=10, translation=10 automatically. Only e
 ### For "game_detail" pages:
 The page's core value IS the interactive gaming experience, not editorial text.
 
-**If embedSignal = "game" (has game iframe/canvas):**
+**If embedSignal = "game" (has game-like iframe):**
 - value: Score 7+ if the page has a game embed with basic context (title, description, instructions). If the embed is present but the page has very little supporting text (<200 chars), still score 7 but note the need for manual verification.
 - originality: Score based on curation quality — unique descriptions, gameplay tips, editorial commentary. Score 5-7 for basic original descriptions. Score 3-4 only for generic one-liners like "Play X free online" that clearly follow an auto-generated template.
 - relevance: How relevant the game is to the site's overall topic/theme.
@@ -50,6 +58,18 @@ The page's core value IS the interactive gaming experience, not editorial text.
 
 **If embedSignal = "none" (no game embed, pure text):**
 This is a content page (game guide/review), not a functional page. Evaluate as a "content" page — assess text depth, originality, and substantive information.
+
+### For "tool_detail" pages:
+The page's core value IS the interactive tool/editor functionality, not editorial text.
+
+**If embedSignal = "tool" (has canvas, editor, converter, calculator, or similar interactive widget):**
+- value: Score 7+ if the page has a functional tool with clear purpose, usable interface, and basic instructions. Tools that solve real problems for a specific niche score higher. Score 5-6 for tools with minimal context or unclear utility.
+- originality: Score based on whether the tool offers unique features, custom logic, or niche-specific value. Score 5-7 for tools with distinctive functionality or thoughtful UX. Score 3-4 for generic, easily-replicable tools with no editorial touch. Do NOT penalize for lack of long-form text — tools are evaluated by their utility, not word count.
+- relevance: How relevant the tool is to the site's overall topic/theme.
+- compliance: Flag actual policy violations.
+
+**If embedSignal = "none" (no tool embed, pure text):**
+This is a content page (tool review/tutorial), not a functional page. Evaluate as a "content" page — assess text depth, originality, and substantive information.
 
 ### For "video_detail" pages:
 The page's core value IS the video content, not surrounding text.
@@ -100,7 +120,7 @@ Flag: adult content, gambling promotion, drugs, violence promotion, copyright in
 - If the page is a 404 or has minimal content, do not flag. Note "insufficient content".
 
 ### Anti-Hallucination & Trustworthiness Rule (apply to ALL page types):
-For "content", "reference_detail", and "game_detail" pages, actively check for factual validity. If the content generates hallucinated facts (e.g., non-existent software version numbers, incorrect game mechanics, fake history data, or contradictory logical steps), the \`compliance\` and \`value\` score MUST be strictly penalized to ≤ 4, regardless of how clean the writing or translation is.
+For "content", "reference_detail", "game_detail", and "tool_detail" pages, actively check for factual validity. If the content generates hallucinated facts (e.g., non-existent software version numbers, incorrect game mechanics, fake history data, or contradictory logical steps), the \`compliance\` and \`value\` score MUST be strictly penalized to ≤ 4, regardless of how clean the writing or translation is.
 
 ### Translation rules (apply to ALL page types):
 Declared language: {{pageLanguage}}
@@ -116,7 +136,7 @@ Score 0 = content is completely untranslated or machine-translated gibberish.
 - If the declared language is English or not set, score 10 automatically.
 
 Page: {{url}}
-Embed signal: {{embedSignal}} (game = has game iframe/canvas, video = has video element, none = no embed)
+Embed signal: {{embedSignal}} (game = has game-like iframe, tool = has canvas/editor/converter/interactive widget, video = has video element, none = no embed — this is a structural hint only, use page content to determine the actual type)
 {{listingContext}}
 
 Content:
@@ -124,20 +144,26 @@ Content:
 
 Reply in {{langName}} with JSON:
 {
-  "pageType": "homepage|listing|content|game_detail|video_detail|reference_detail|required|utility",
+  "pageType": "homepage|listing|content|game_detail|video_detail|reference_detail|tool_detail|required|utility",
+
   "evaluation_details": {
     "value_reason": "Objective analysis of this page's real value density, information depth, and whether it solves user pain points. Look for substantive content vs. filler.",
     "value": <0-10>,
+
     "originality_reason": "Evidence of firsthand experience — unique screenshots, specific test data, personal case studies, or custom logs. Distinguish genuine human experience from AI-generated or templated content.",
     "originality": <0-10>,
+
     "relevance_reason": "How deeply this page anchors to the site's core topic. Flag if the page deviates or pads content off-topic.",
     "relevance": <0-10>,
     "relevanceLabel": "relevant|tangential|off-topic",
+
     "compliance_reason": "Fact-check and policy compliance check. Note any hallucinated facts (fake version numbers, incorrect mechanics) or policy violations.",
     "compliance": <0-10>,
+
     "translation_reason": "Check if content matches the declared language naturally, adopting local idioms and domain jargon. Flag machine-translation artifacts.",
     "translation": <0-10>
   },
+
   "confidence": "high|medium|low",
   "assessment": "Comprehensive summary synthesizing the key findings across all E-E-A-T dimensions.",
   "suggestions": ["1-3 highly specific actionable suggestions to improve this page based on the lowest scoring dimensions"]

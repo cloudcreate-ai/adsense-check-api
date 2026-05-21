@@ -1,7 +1,7 @@
 export type AnalysisType = 'page' | 'compliance' | 'topic' | 'approval';
 
 export type PageType =
-  | 'homepage' | 'listing' | 'content' | 'game_detail' | 'video_detail'
+  | 'homepage' | 'listing' | 'content' | 'game_detail' | 'tool_detail' | 'video_detail'
   | 'reference_detail' | 'required' | 'utility';
 
 export type SiteType = 'content' | 'tool' | 'game' | 'video' | 'reference' | 'unsupported';
@@ -11,7 +11,7 @@ export interface AnalyzePageRequest {
   url: string;
   lang?: string;
   pageLanguage?: string;
-  embedSignal?: 'game' | 'video' | 'none';
+  embedSignal?: 'game' | 'tool' | 'video' | 'none';
   siteTopic?: { topic: string; type: string; description: string };
   listingSignals?: { listItems: number; hasPagination: boolean; hasCategories: boolean; hasSearch: boolean };
   model?: string;
