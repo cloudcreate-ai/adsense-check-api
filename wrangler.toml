@@ -12,6 +12,7 @@ AI_FAST_MODEL = "deepseek-v4-flash"
 AI_EXPERT_API_BASE = "https://api.deepseek.com"
 AI_EXPERT_MODEL = "deepseek-v4-pro"
 RATE_LIMIT_MAX = "60"
+MIN_CLIENT_VERSION = "1.11.3"
 
 [placement]
 mode = "smart"
