@@ -1,22 +1,9 @@
-export function renderPrompt(template: string, vars: Record<string, string>): string {
-  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
-}
-
-export function extractJson(text: string): any {
-  const jsonMatch = text.match(/\{[\s\S]*\}/);
-  if (!jsonMatch) {
-    throw new Error('No JSON found in response');
-  }
-  return JSON.parse(jsonMatch[0]);
-}
-
-const AI_LANG_NAMES: Record<string, string> = { en: 'English', zh: '中文' };
-
-export function getLangName(lang: string): string {
-  return AI_LANG_NAMES[lang] ?? lang;
-}
+// Re-export utilities from core; keep prompt templates local for Cloudflare Workers bundling
+export { renderPrompt, getLangName, extractJson } from '@cloudcreate/adsense-check-core';
 
 // ── Prompt Templates ─────────────────────────────────────────────────────
+// TODO: These should be generated from adsense-check-core/src/ai/prompts/*.md
+// at build time. For now, kept here for CF Workers compatibility.
 
 export const ANALYZE_SINGLE = `You are a Google AdSense review expert. Analyze this page and score it on five dimensions.
 Current date: {{date}}
