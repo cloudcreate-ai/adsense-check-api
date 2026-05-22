@@ -1,5 +1,5 @@
 {
-  "name": "adsense-check-api",
+  "name": "@cloudcreate/adsense-check-api",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -8,6 +8,7 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
+    "@cloudcreate/adsense-check-core": "^1.0.0",
     "hono": "^4.7.0"
   },
   "devDependencies": {
