@@ -46,7 +46,7 @@ curl -X POST http://localhost:8787/api/analyze/page \
   -d '{"url":"https://example.com/page","content":"..."}'
 ```
 
-Free users will see an `X-Powered-By` header with a link to [adsense-check](https://github.com/cloudcreate-ai/adsense-checklist).
+Free users will see an `X-Powered-By` header with a link to [adsense-check](https://github.com/cloudcreate-ai/adsense-check-workspace).
 
 ## Environment Variables
 
