@@ -119,6 +119,8 @@ api.post('/analyze/page', async (c) => {
     return c.json({ error: 'Missing required fields: content, url', code: 'BAD_REQUEST', docs: DOCS_HINT }, 400);
   }
 
+  console.log(`analyze/page url=${body.url}`);
+
   const langName = getLangName(body.lang || 'en');
   const date = new Date().toISOString().slice(0, 10);
   const topicCtx = body.siteTopic
@@ -159,6 +161,8 @@ api.post('/analyze/compliance', async (c) => {
     return c.json({ error: 'Missing required fields: content, url, firstScore', code: 'BAD_REQUEST', docs: DOCS_HINT }, 400);
   }
 
+  console.log(`analyze/compliance url=${body.url}`);
+
   const langName = getLangName(body.lang || 'en');
   const prompt = renderPrompt(COMPLIANCE_RECHECK, {
     firstScore: String(body.firstScore),
@@ -195,6 +199,8 @@ api.post('/analyze/topic', async (c) => {
     content: body.content,
     langName,
   });
+
+  console.log(`analyze/topic title=${body.title}`);
 
   try {
     const result = await callAiAPI(prompt, resolveModelConfig(c.env, false, body));
@@ -235,6 +241,8 @@ api.post('/analyze/approval', async (c) => {
     pageValueNote: body.pageValueNote || '',
     pageSummaries: body.pageSummaries,
   });
+
+  console.log(`analyze/approval siteUrl=${body.siteUrl}`);
 
   try {
     const result = await callAiAPI(prompt, resolveModelConfig(c.env, expert, body));
