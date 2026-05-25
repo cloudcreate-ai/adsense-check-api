@@ -1,5 +1,43 @@
-// Re-export utilities from core; keep prompt templates local for Cloudflare Workers bundling
-export { renderPrompt, getLangName, extractJson } from '@cloudcreate/adsense-check-core';
+// ── Utility Functions (inlined to avoid core's fs/playwright imports in CF Workers) ──
+
+export function renderPrompt(template: string, vars: Record<string, string>): string {
+  return template.replace(/\{\{(\w+)\}\}/g, (_, key) => vars[key] ?? `{{${key}}}`);
+}
+
+export function extractJson(text: string): unknown {
+  const jsonMatch = text.match(/\{[\s\S]*\}/);
+  if (jsonMatch) {
+    return JSON.parse(jsonMatch[0]);
+  }
+  throw new Error('No JSON found in response');
+}
+
+const AI_LANG_NAMES: Record<string, string> = {
+  en: 'English',
+  zh: 'Chinese',
+  es: 'Spanish',
+  fr: 'French',
+  de: 'German',
+  ja: 'Japanese',
+  ko: 'Korean',
+  pt: 'Portuguese',
+  ru: 'Russian',
+  ar: 'Arabic',
+  hi: 'Hindi',
+  th: 'Thai',
+  vi: 'Vietnamese',
+  id: 'Indonesian',
+  ms: 'Malay',
+  tr: 'Turkish',
+  it: 'Italian',
+  nl: 'Dutch',
+  pl: 'Polish',
+  uk: 'Ukrainian',
+};
+
+export function getLangName(code: string): string {
+  return AI_LANG_NAMES[code] || 'English';
+}
 
 // ── Prompt Templates ─────────────────────────────────────────────────────
 // TODO: These should be generated from adsense-check-core/src/ai/prompts/*.md
