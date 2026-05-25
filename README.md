@@ -200,3 +200,9 @@ In Cloudflare Dashboard → Workers & Pages → adsense-check-api → Triggers, 
 - **Smart placement** — isolates automatically placed near users
 - **Static assets** — `public/llms.txt` served at the platform level
 - **Dual model support** — fast model for routine analysis, expert model for deep approval assessment
+
+## Links
+
+- Homepage: https://cloudcreate.ai
+- Issues: https://github.com/cloudcreate-ai/adsense-check-api/issues
+- Contact: contact@cloudcreate.ai
